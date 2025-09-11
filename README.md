@@ -4,4 +4,4 @@ ________________________________________________________________________________
 _________________________________________________________________________________________________
 _________________________________________________________________________________________________
 
-<img src="https://readme-typing-svg.herokuapp.com?font=VT323&size=45&pause=1500&color=7D3BC3&center=true&vCenter=true&width=450&lines=>.......;{E14A🕵️A69-A21E-4E17-A55C-3B4F6DC1D}" alt="Typing SVG" />
+<img src="https://readme-typing-svg.herokuapp.com?font=VT323&size=45&pause=1500&color=7D3BC3&center=true&vCenter=true&width=450&lines=>.......;{E14A🕵️89-A21E-4E17-A55C-3B4F61D}" alt="Typing SVG" />
